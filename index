@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחבר — תוכנת עריכת ספרים מקצועית</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy: #1a2540;
+    --navy-mid: #243050;
+    --navy-light: #2e3d63;
+    --gold: #c9a84c;
+    --gold-light: #e2c37a;
+    --gold-pale: #f5e9c8;
+    --cream: #fdf8f0;
+    --cream-dark: #f5ede0;
+    --text-dark: #1a1a2e;
+    --text-mid: #3d3d5c;
+    --text-light: #6b6b8a;
+    --border: #d4c4a0;
+    --border-light: #e8dcc8;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 4px rgba(26,37,64,0.10);
+    --shadow-md: 0 4px 16px rgba(26,37,64,0.13);
+    --shadow-lg: 0 8px 32px rgba(26,37,64,0.16);
+    --radius: 6px;
+    --radius-sm: 3px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Heebo', 'Arial Hebrew', Arial, sans-serif;
+    background: #eae6df;
+    color: var(--text-dark);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    direction: rtl;
+  }
+
+  /* ===== TITLE BAR ===== */
+  #title-bar {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #1e2d52 100%);
+    padding: 0 20px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 100;
+  }
+  #title-bar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #title-bar .brand-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--navy); font-weight: 900;
+    font-family: 'Frank Ruhl Libre', serif;
+    box-shadow: 0 2px 6px rgba(201,168,76,0.4);
+  }
+  #title-bar .brand-name {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 20px; font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 0.5px;
+  }
+  #title-bar .brand-name span { color: rgba(255,255,255,0.7); font-weight: 300; font-size: 13px; margin-right: 6px; }
+  #title-bar .doc-title {
+    color: rgba(255,255,255,0.85);
+    font-size: 14px;
+    font-weight: 400;
+    background: rgba(255,255,255,0.08);
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: text;
+    outline: none;
+    text-align: center;
+    min-width: 200px;
+  }
+  #title-bar .doc-title:focus { background: rgba(255,255,255,0.14); border-color: var(--gold); }
+  #title-bar .win-controls { display: flex; gap: 6px; }
+  #title-bar .win-btn {
+    width: 14px; height: 14px; border-radius: 50%; border: none;
+    cursor: pointer; transition: filter 0.2s;
+  }
+  #title-bar .win-btn:hover { filter: brightness(1.3); }
+  .wb-close { background: #ff5f57; }
+  .wb-min { background: #ffbd2e; }
+  .wb-max { background: #28ca41; }
+
+  /* ===== MENU BAR ===== */
+  #menu-bar {
+    background: var(--navy-mid);
+    display: flex;
+    align-items: stretch;
+    padding: 0 12px;
+    border-bottom: 2px solid var(--gold);
+    height: 36px;
+    position: relative;
+    z-index: 90;
+  }
+  .menu-tab {
+    display: flex; align-items: center; gap: 5px;
+    padding: 0 14px;
+    color: rgba(255,255,255,0.82);
+    font-size: 13.5px; font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.18s;
+    white-space: nowrap;
+    user-select: none;
+    position: relative;
+  }
+  .menu-tab:hover { color: var(--gold-light); background: rgba(255,255,255,0.06); }
+  .menu-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .menu-tab .tab-icon { font-size: 14px; }
+
+  /* ===== RIBBON ===== */
+  #ribbon {
+    background: linear-gradient(180deg, #f8f4ed 0%, var(--cream-dark) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    min-height: 82px;
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ribbon-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-left: 1px solid var(--border-light);
+    padding: 0 12px;
+    min-width: fit-content;
+  }
+  .ribbon-section:first-child { border-right: none; }
+  .ribbon-section:last-child { border-left: none; }
+  .ribbon-section-label {
+    font-size: 10px; color: var(--text-light); font-weight: 500;
+    margin-top: auto; padding-top: 4px;
+    text-align: center; white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+  .ribbon-controls {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .rb-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 5px 8px; border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: transparent;
+    color: var(--text-mid); font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    font-family: 'Heebo', sans-serif;
+    min-width: 44px; min-height: 48px;
+    text-align: center;
+  }
+  .rb-btn .rb-icon { font-size: 18px; line-height: 1; }
+  .rb-btn:hover { background: rgba(201,168,76,0.12); border-color: var(--gold); color: var(--navy); }
+  .rb-btn.active { background: rgba(201,168,76,0.2); border-color: var(--gold); color: var(--navy); }
+  .rb-btn.primary { background: linear-gradient(135deg, var(--navy), var(--navy-light)); color: white; border-color: var(--navy); }
+  .rb-btn.primary:hover { background: linear-gradient(135deg, var(--navy-light), var(--navy)); box-shadow: var(--shadow-sm); }
+  .rb-btn.gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); border-color: var(--gold); font-weight: 700; }
+  .rb-btn.gold:hover { box-shadow: 0 2px 8px rgba(201,168,76,0.4); }
+
+  .rb-btn-sm {
+    padding: 3px 7px; min-height: 26px; min-width: 26px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: white; color: var(--text-mid); font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+    font-family: 'Heebo', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+  }
+  .rb-btn-sm:hover { background: var(--gold-pale); border-color: var(--gold); color: var(--navy); }
+  .rb-btn-sm.active { background: var(--gold-pale); border-color: var(--gold); color: var(--navy); font-weight: 700; }
+
+  .rb-select {
+    padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: white; color: var(--text-dark); font-size: 12.5px;
+    font-family: 'Heebo', sans-serif; cursor: pointer;
+    outline: none; transition: border-color 0.15s;
+    direction: rtl;
+  }
+  .rb-select:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+
+  .rb-input {
+    padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: white; color: var(--text-dark); font-size: 12.5px;
+    font-family: 'Heebo', sans-serif; outline: none; transition: border-color 0.15s;
+    width: 52px; text-align: center;
+  }
+  .rb-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+
+  .rb-separator { width: 1px; background: var(--border); margin: 6px 4px; align-self: stretch; }
+  .rb-row { display: flex; align-items: center; gap: 3px; }
+  .rb-col { display: flex; flex-direction: column; gap: 2px; }
+
+  .color-swatch {
+    width: 22px; height: 22px; border-radius: 3px; border: 2px solid var(--border);
+    cursor: pointer; position: relative; overflow: hidden;
+  }
+  .color-swatch:hover { border-color: var(--gold); }
+  .color-swatch input[type=color] {
+    position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px);
+    opacity: 0; cursor: pointer;
+  }
+
+  /* ===== MAIN AREA ===== */
+  #main-area {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ===== LEFT SIDEBAR (tools) ===== */
+  #sidebar-tools {
+    width: 50px;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 4px;
+    border-left: 2px solid var(--gold);
+    flex-shrink: 0;
+  }
+  .tool-btn {
+    width: 38px; height: 38px; border-radius: 8px;
+    border: none; background: transparent; color: rgba(255,255,255,0.65);
+    font-size: 17px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .tool-btn:hover { background: rgba(201,168,76,0.2); color: var(--gold-light); }
+  .tool-btn.active { background: rgba(201,168,76,0.25); color: var(--gold-light); }
+  .tool-separator { width: 28px; height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0; }
+  .tool-btn-tip {
+    position: absolute; right: 48px; top: 50%; transform: translateY(-50%);
+    background: var(--navy); color: white; padding: 4px 10px;
+    border-radius: 4px; font-size: 11px; white-space: nowrap;
+    pointer-events: none; opacity: 0; transition: opacity 0.2s;
+    border: 1px solid var(--gold); z-index: 999;
+  }
+  .tool-btn:hover .tool-btn-tip { opacity: 1; }
+
+  /* ===== EDITOR CANVAS AREA ===== */
+  #canvas-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #d8d3cc;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  #canvas-area::-webkit-scrollbar { width: 10px; }
+  #canvas-area::-webkit-scrollbar-track { background: #c8c3bc; }
+  #canvas-area::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 5px; }
+
+  /* Page */
+  .page-wrapper { position: relative; }
+  .page-shadow {
+    background: white;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.1);
+    border-radius: 1px;
+    position: relative;
+  }
+  .page-number-badge {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--text-light); background: none;
+  }
+
+  /* The actual editable page */
+  .editor-page {
+    width: 794px; /* A4 */
+    min-height: 1123px; /* A4 */
+    padding: 80px 90px;
+    font-family: 'Frank Ruhl Libre', 'Times New Roman', serif;
+    font-size: 14pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    direction: rtl;
+    text-align: right;
+    outline: none;
+    word-wrap: break-word;
+    position: relative;
+  }
+  .editor-page:focus { box-shadow: inset 0 0 0 2px rgba(201,168,76,0.3); }
+  .editor-page::before {
+    content: '';
+    position: absolute;
+    top: 60px; right: 70px; bottom: 60px; left: 70px;
+    border: 1px dashed rgba(201,168,76,0.2);
+    pointer-events: none;
+  }
+  .editor-page p { margin-bottom: 0.4em; }
+
+  /* ===== RIGHT PANEL (properties) ===== */
+  #panel-right {
+    width: 240px;
+    background: var(--cream);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  #panel-right::-webkit-scrollbar { width: 6px; }
+  #panel-right::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .panel-section {
+    border-bottom: 1px solid var(--border-light);
+    padding: 12px 14px;
+  }
+  .panel-section-title {
+    font-size: 11px; font-weight: 700; color: var(--navy);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .panel-section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border-light);
+  }
+  .panel-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; gap: 8px;
+  }
+  .panel-label { font-size: 12px; color: var(--text-mid); white-space: nowrap; }
+  .panel-input {
+    padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 3px; font-size: 12px; width: 80px; text-align: center;
+    font-family: 'Heebo', sans-serif; outline: none; background: white;
+    direction: ltr;
+  }
+  .panel-input:focus { border-color: var(--gold); }
+  .panel-select {
+    padding: 4px 6px; border: 1px solid var(--border);
+    border-radius: 3px; font-size: 12px; width: 100%; background: white;
+    font-family: 'Heebo', sans-serif; outline: none; direction: rtl;
+  }
+  .panel-select:focus { border-color: var(--gold); }
+
+  /* ===== STATUS BAR ===== */
+  #status-bar {
+    height: 26px;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .status-item {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .status-item strong { color: var(--gold-light); font-weight: 600; }
+  .status-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.15); }
+
+  /* Zoom control */
+  #zoom-control {
+    display: flex; align-items: center; gap: 6px; margin-right: auto;
+  }
+  #zoom-slider {
+    -webkit-appearance: none; width: 80px; height: 3px;
+    background: rgba(255,255,255,0.2); border-radius: 2px; outline: none;
+  }
+  #zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--gold); cursor: pointer;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(3px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    min-width: 420px; max-width: 90vw;
+    max-height: 85vh; overflow-y: auto;
+    direction: rtl;
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+    color: white;
+    padding: 16px 20px;
+    border-radius: 10px 10px 0 0;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 700; font-size: 15px;
+  }
+  .modal-header .modal-close {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    font-size: 20px; cursor: pointer; padding: 0 4px;
+  }
+  .modal-header .modal-close:hover { color: white; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-start; }
+
+  .modal-form-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .modal-form-label { font-size: 13px; color: var(--text-mid); width: 120px; flex-shrink: 0; }
+  .modal-form-input {
+    flex: 1; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: 5px;
+    font-family: 'Heebo', sans-serif; font-size: 13px; outline: none;
+    direction: rtl;
+  }
+  .modal-form-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+  .modal-form-select {
+    flex: 1; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: 5px;
+    font-family: 'Heebo', sans-serif; font-size: 13px; outline: none;
+    background: white; direction: rtl;
+  }
+
+  .btn {
+    padding: 8px 18px; border-radius: 6px; font-size: 13px;
+    font-family: 'Heebo', sans-serif; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold-light); box-shadow: 0 2px 8px rgba(201,168,76,0.4); }
+  .btn-outline { background: white; color: var(--text-mid); border: 1px solid var(--border); }
+  .btn-outline:hover { border-color: var(--gold); color: var(--navy); }
+
+  /* Dropdown Menus */
+  .dropdown-menu {
+    position: absolute;
+    top: 100%; right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow-md);
+    z-index: 500;
+    min-width: 200px;
+    display: none;
+    direction: rtl;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-item {
+    padding: 9px 16px; font-size: 13px; color: var(--text-dark);
+    cursor: pointer; display: flex; align-items: center; gap: 10px;
+    transition: background 0.12s;
+    border-radius: 4px; margin: 2px 4px;
+  }
+  .dropdown-item:hover { background: var(--gold-pale); color: var(--navy); }
+  .dropdown-separator { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .dropdown-item .di-icon { width: 18px; text-align: center; }
+  .dropdown-item .di-shortcut { margin-right: auto; font-size: 11px; color: var(--text-light); }
+
+  /* Tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: white; padding: 4px 9px;
+    border-radius: 4px; font-size: 11px; white-space: nowrap;
+    pointer-events: none; z-index: 999;
+  }
+
+  /* ===== FOOTNOTE AREA ===== */
+  .footnote-area {
+    border-top: 1px solid #333;
+    margin-top: 20px;
+    padding-top: 10px;
+  }
+  .footnote-item {
+    font-size: 10pt;
+    line-height: 1.5;
+    margin-bottom: 4px;
+    direction: rtl;
+  }
+  sup.fn-ref {
+    font-size: 0.65em;
+    color: #1a2540;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  sup.fn-ref:hover { color: var(--gold); }
+
+  /* ===== SHAPES ===== */
+  .inserted-shape {
+    display: inline-block;
+    cursor: move;
+    border: 2px solid transparent;
+    user-select: none;
+  }
+  .inserted-shape:hover { border-color: var(--gold); }
+  .inserted-shape.selected { border-color: var(--navy); }
+
+  /* ===== PRINTING ===== */
+  @media print {
+    #title-bar, #menu-bar, #ribbon, #sidebar-tools, #panel-right, #status-bar { display: none !important; }
+    #canvas-area { background: white; padding: 0; }
+    .editor-page { box-shadow: none; border: none; }
+    .page-number-badge { display: none; }
+  }
+
+  /* ===== WELCOME SCREEN ===== */
+  #welcome-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, var(--navy) 0%, #162038 40%, #1e2d52 100%);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    direction: rtl;
+  }
+  .welcome-box {
+    text-align: center; color: white;
+    animation: fadeInUp 0.6s ease;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .welcome-logo {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 40px; font-weight: 900;
+    color: var(--navy);
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 32px rgba(201,168,76,0.4);
+  }
+  .welcome-title {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 42px; font-weight: 700;
+    color: var(--gold-light);
+    margin-bottom: 8px;
+  }
+  .welcome-sub { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 40px; font-weight: 300; }
+  .welcome-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .welcome-card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 12px; padding: 22px 28px;
+    cursor: pointer; transition: all 0.2s;
+    min-width: 140px; text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .welcome-card:hover {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.2);
+  }
+  .welcome-card .wc-icon { font-size: 28px; margin-bottom: 8px; }
+  .welcome-card .wc-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); }
+  .welcome-version { margin-top: 40px; font-size: 11px; color: rgba(255,255,255,0.3); }
+
+  /* Tabs inside panels */
+  .mini-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .mini-tab {
+    padding: 6px 12px; font-size: 12px; color: var(--text-light);
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .mini-tab.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 600; }
+
+  /* Recent files list */
+  .recent-file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    cursor: pointer; transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .recent-file-item:hover { background: var(--gold-pale); border-color: var(--border); }
+  .rfi-icon { font-size: 22px; }
+  .rfi-name { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+  .rfi-date { font-size: 11px; color: var(--text-light); }
+
+  /* Color palette */
+  .color-palette { display: flex; flex-wrap: wrap; gap: 4px; }
+  .cp-swatch {
+    width: 20px; height: 20px; border-radius: 3px; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s;
+  }
+  .cp-swatch:hover { border-color: var(--navy); transform: scale(1.15); }
+
+  /* Tabs for ribbon panels */
+  #ribbon-panels > div { display: none; }
+  #ribbon-panels > div.active-panel { display: flex; }
+
+</style>
+</head>
+<body>
+
+<!-- ===== WELCOME SCREEN ===== -->
+<div id="welcome-overlay">
+  <div class="welcome-box">
+    <div class="welcome-logo">מ</div>
+    <div class="welcome-title">מחבר</div>
+    <div class="welcome-sub">תוכנת עריכת ספרים מקצועית • בעברית • לדוברי לשון הקודש</div>
+    <div class="welcome-actions">
+      <div class="welcome-card" onclick="startNew()">
+        <div class="wc-icon">📄</div>
+        <div class="wc-label">מסמך חדש</div>
+      </div>
+      <div class="welcome-card" onclick="openFile()">
+        <div class="wc-icon">📂</div>
+        <div class="wc-label">פתח קובץ</div>
+      </div>
+      <div class="welcome-card" onclick="openRecent()">
+        <div class="wc-icon">🕐</div>
+        <div class="wc-label">קבצים אחרונים</div>
+      </div>
+      <div class="welcome-card" onclick="openTemplate()">
+        <div class="wc-icon">📋</div>
+        <div class="wc-label">תבניות</div>
+      </div>
+    </div>
+    <div class="welcome-version">מחבר v2.1.0 • פותח לדוברי עברית</div>
+  </div>
+</div>
+
+<!-- ===== TITLE BAR ===== -->
+<div id="title-bar">
+  <div class="brand">
+    <div class="brand-icon">מ</div>
+    <div class="brand-name">מחבר <span>| עורך ספרים מקצועי</span></div>
+  </div>
+  <input class="doc-title" id="doc-title" value="מסמך חדש.מחבר" />
+  <div class="win-controls">
+    <button class="win-btn wb-close" title="סגור"></button>
+    <button class="win-btn wb-min" title="מזערון"></button>
+    <button class="win-btn wb-max" title="הגדלה"></button>
+  </div>
+</div>
+
+<!-- ===== MENU BAR ===== -->
+<div id="menu-bar">
+  <div class="menu-tab active" data-tab="file" onclick="switchTab('file',this)">
+    <span class="tab-icon">📁</span> קובץ
+  </div>
+  <div class="menu-tab" data-tab="home" onclick="switchTab('home',this)">
+    <span class="tab-icon">🏠</span> בית
+  </div>
+  <div class="menu-tab" data-tab="layout" onclick="switchTab('layout',this)">
+    <span class="tab-icon">📐</span> פריסת עמוד
+  </div>
+  <div class="menu-tab" data-tab="advanced" onclick="switchTab('advanced',this)">
+    <span class="tab-icon">✒️</span> עריכה מתקדמת
+  </div>
+  <div class="menu-tab" data-tab="design" onclick="switchTab('design',this)">
+    <span class="tab-icon">🎨</span> עיצוב
+  </div>
+  <div class="menu-tab" data-tab="footnotes" onclick="switchTab('footnotes',this)">
+    <span class="tab-icon">📝</span> הערות
+  </div>
+</div>
+
+<!-- ===== RIBBON ===== -->
+<div id="ribbon">
+  <div id="ribbon-panels" style="display:flex;width:100%;gap:4px;align-items:stretch;">
+
+    <!-- FILE PANEL -->
+    <div id="panel-file" class="active-panel" style="display:flex;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls" style="flex-direction:column;gap:4px;">
+          <button class="rb-btn gold" onclick="saveFile()" data-tip="שמור קובץ">
+            <span class="rb-icon">💾</span>שמור
+          </button>
+          <button class="rb-btn primary" onclick="newFile()" data-tip="מסמך חדש">
+            <span class="rb-icon">📄</span>חדש
+          </button>
+        </div>
+        <div class="ribbon-section-label">קובץ</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls" style="flex-direction:column;gap:4px;">
+          <button class="rb-btn" onclick="saveAs('docx')" data-tip="שמור כ-Word">
+            <span class="rb-icon">📝</span>שמור כ-Word
+          </button>
+          <button class="rb-btn" onclick="saveAs('pdf')" data-tip="שמור כ-PDF">
+            <span class="rb-icon">📕</span>שמור כ-PDF
+          </button>
+        </div>
+        <div class="ribbon-section-label">ייצוא</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls" style="flex-direction:column;gap:4px;">
+          <button class="rb-btn" onclick="saveAs('png')" data-tip="ייצוא כתמונה PNG">
+            <span class="rb-icon">🖼️</span>PNG
+          </button>
+          <button class="rb-btn" onclick="saveAs('jpg')" data-tip="ייצוא כתמונה JPG">
+            <span class="rb-icon">📷</span>JPG
+          </button>
+        </div>
+        <div class="ribbon-section-label">תמונות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls">
+          <button class="rb-btn" onclick="openModal('modal-print')" data-tip="הדפסה">
+            <span class="rb-icon">🖨️</span>הדפסה
+          </button>
+          <button class="rb-btn" onclick="openModal('modal-recent')" data-tip="קבצים אחרונים">
+            <span class="rb-icon">🕐</span>אחרונים
+          </button>
+        </div>
+        <div class="ribbon-section-label">פעולות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls">
+          <button class="rb-btn" onclick="openModal('modal-props')" data-tip="מאפייני מסמך">
+            <span class="rb-icon">ℹ️</span>מאפיינים
+          </button>
+          <button class="rb-btn" onclick="openModal('modal-password')" data-tip="הגנת סיסמה">
+            <span class="rb-icon">🔒</span>הגנה
+          </button>
+        </div>
+        <div class="ribbon-section-label">מסמך</div>
+      </div>
+    </div>
+
+    <!-- HOME PANEL -->
+    <div id="panel-home" style="display:none;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <select class="rb-select" id="font-family" style="width:150px;" onchange="applyFormat('fontName',this.value)">
+              <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+              <option value="Heebo">Heebo</option>
+              <option value="David">David</option>
+              <option value="Miriam">Miriam</option>
+              <option value="Narkisim">Narkisim</option>
+              <option value="Arial">Arial</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Guttman Yad">Guttman Yad</option>
+              <option value="Vilna">Vilna</option>
+              <option value="Rashi">Rashi (סימולציה)</option>
+            </select>
+            <input class="rb-input" id="font-size" type="number" value="14" min="6" max="144" onchange="applyFormat('fontSize',this.value)" style="width:52px;">
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" id="btn-bold" onclick="toggleFormat('bold')" data-tip="הדגשה (Ctrl+B)" style="font-weight:900;">ב</button>
+            <button class="rb-btn-sm" id="btn-italic" onclick="toggleFormat('italic')" data-tip="הטייה (Ctrl+I)" style="font-style:italic;">ט</button>
+            <button class="rb-btn-sm" id="btn-underline" onclick="toggleFormat('underline')" data-tip="קו תחתי (Ctrl+U)" style="text-decoration:underline;">ק</button>
+            <button class="rb-btn-sm" id="btn-strike" onclick="toggleFormat('strikeThrough')" data-tip="קו חוצה" style="text-decoration:line-through;">ח</button>
+            <button class="rb-btn-sm" onclick="toggleFormat('superscript')" data-tip="כתב עילי">x²</button>
+            <button class="rb-btn-sm" onclick="toggleFormat('subscript')" data-tip="כתב שפלי">x₂</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">גופן</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row" style="align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text-light);">צבע טקסט:</span>
+            <div class="color-swatch" style="background:#000000;" id="text-color-swatch">
+              <input type="color" id="text-color" value="#000000" oninput="applyTextColor(this.value)">
+            </div>
+            <span style="font-size:11px;color:var(--text-light);">רקע:</span>
+            <div class="color-swatch" style="background:#ffff00;" id="bg-color-swatch">
+              <input type="color" id="bg-color" value="#ffff00" oninput="applyBgColor(this.value)">
+            </div>
+          </div>
+          <div class="color-palette" style="max-width:180px;">
+            <div class="cp-swatch" style="background:#000000;" onclick="applyTextColor('#000000')"></div>
+            <div class="cp-swatch" style="background:#1a2540;" onclick="applyTextColor('#1a2540')"></div>
+            <div class="cp-swatch" style="background:#c0392b;" onclick="applyTextColor('#c0392b')"></div>
+            <div class="cp-swatch" style="background:#e67e22;" onclick="applyTextColor('#e67e22')"></div>
+            <div class="cp-swatch" style="background:#27ae60;" onclick="applyTextColor('#27ae60')"></div>
+            <div class="cp-swatch" style="background:#2980b9;" onclick="applyTextColor('#2980b9')"></div>
+            <div class="cp-swatch" style="background:#8e44ad;" onclick="applyTextColor('#8e44ad')"></div>
+            <div class="cp-swatch" style="background:#c9a84c;" onclick="applyTextColor('#c9a84c')"></div>
+            <div class="cp-swatch" style="background:#7f8c8d;" onclick="applyTextColor('#7f8c8d')"></div>
+            <div class="cp-swatch" style="background:#ffffff;border:1px solid #ccc;" onclick="applyTextColor('#ffffff')"></div>
+          </div>
+        </div>
+        <div class="ribbon-section-label">צבע</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="setAlign('right')" data-tip="יישור לימין">⇒</button>
+            <button class="rb-btn-sm" onclick="setAlign('left')" data-tip="יישור לשמאל">⇐</button>
+            <button class="rb-btn-sm" onclick="setAlign('center')" data-tip="מרכוז">↔</button>
+            <button class="rb-btn-sm" onclick="setAlign('justify')" data-tip="יישור לשני הצדדים">≡</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="setDir('rtl')" data-tip="ימין לשמאל">RTL</button>
+            <button class="rb-btn-sm" onclick="setDir('ltr')" data-tip="שמאל לימין">LTR</button>
+            <select class="rb-select" id="line-height" onchange="setLineHeight(this.value)" style="width:80px;">
+              <option value="1.2">1.2</option>
+              <option value="1.5" selected>1.5</option>
+              <option value="1.8">1.8</option>
+              <option value="2.0">2.0</option>
+              <option value="2.5">2.5</option>
+              <option value="3.0">3.0</option>
+            </select>
+          </div>
+        </div>
+        <div class="ribbon-section-label">יישור ורווח</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">רווח פסקה:</span>
+            <input class="rb-input" type="number" value="6" min="0" max="60" id="para-space" onchange="setParaSpace(this.value)" style="width:46px;">px
+          </div>
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">מרווח תוים:</span>
+            <input class="rb-input" type="number" value="0" min="-5" max="20" id="letter-space" onchange="setLetterSpacing(this.value)" style="width:46px;">px
+          </div>
+        </div>
+        <div class="ribbon-section-label">מרווחים</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertList('ordered')" data-tip="רשימה ממוספרת">1. ...</button>
+            <button class="rb-btn-sm" onclick="insertList('unordered')" data-tip="רשימה עם נקודות">• ...</button>
+            <button class="rb-btn-sm" onclick="insertList('alpha')" data-tip="רשימה באותיות">א. ...</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertList('roman')" data-tip="רשימה ברומית">I. ...</button>
+            <button class="rb-btn-sm" onclick="changeIndent('in')" data-tip="הגדל כניסה">→|</button>
+            <button class="rb-btn-sm" onclick="changeIndent('out')" data-tip="הקטן כניסה">|←</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">רשימות</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-find')" data-tip="חיפוש והחלפה">🔍</button>
+            <button class="rb-btn-sm" onclick="document.execCommand('undo')" data-tip="בטל (Ctrl+Z)">↩️</button>
+            <button class="rb-btn-sm" onclick="document.execCommand('redo')" data-tip="בצע שוב (Ctrl+Y)">↪️</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="document.execCommand('copy')" data-tip="העתק">📋</button>
+            <button class="rb-btn-sm" onclick="document.execCommand('cut')" data-tip="גזור">✂️</button>
+            <button class="rb-btn-sm" onclick="document.execCommand('paste')" data-tip="הדבק">📌</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">עריכה</div>
+      </div>
+
+      <div class="ribbon-section">
+        <div class="ribbon-controls">
+          <button class="rb-btn" onclick="clearFormat()" data-tip="נקה עיצוב">
+            <span class="rb-icon">🧹</span>נקה עיצוב
+          </button>
+          <button class="rb-btn" onclick="openModal('modal-styles')" data-tip="סגנונות טקסט">
+            <span class="rb-icon">🅰</span>סגנונות
+          </button>
+        </div>
+        <div class="ribbon-section-label">סגנונות</div>
+      </div>
+    </div>
+
+    <!-- LAYOUT PANEL -->
+    <div id="panel-layout" style="display:none;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">גודל עמוד:</span>
+            <select class="rb-select" id="page-size" onchange="setPageSize(this.value)" style="width:110px;">
+              <option value="a4">A4 (210×297 מ"מ)</option>
+              <option value="a5">A5 (148×210 מ"מ)</option>
+              <option value="b5">B5 (176×250 מ"מ)</option>
+              <option value="letter">Letter אמריקאי</option>
+              <option value="custom">מותאם אישית…</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">כיוון:</span>
+            <button class="rb-btn-sm" onclick="setOrientation('portrait')" data-tip="לאורך">📄 לאורך</button>
+            <button class="rb-btn-sm" onclick="setOrientation('landscape')" data-tip="לרוחב">📄 לרוחב</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">עמוד</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">שוליים:</span>
+            <select class="rb-select" onchange="setMargins(this.value)" style="width:120px;">
+              <option value="normal">רגיל (2.5 ס"מ)</option>
+              <option value="narrow">צר (1.27 ס"מ)</option>
+              <option value="wide">רחב (5.08 ס"מ)</option>
+              <option value="custom">מותאם אישית…</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-margins')" data-tip="שוליים מותאמים אישית">⚙ שוליים מותאמים</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">שוליים</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">טורים:</span>
+            <button class="rb-btn-sm" onclick="setColumns(1)" data-tip="טור אחד">|</button>
+            <button class="rb-btn-sm" onclick="setColumns(2)" data-tip="שני טורים">||</button>
+            <button class="rb-btn-sm" onclick="setColumns(3)" data-tip="שלושה טורים">|||</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertPageBreak()" data-tip="מעבר עמוד">מעבר עמוד</button>
+            <button class="rb-btn-sm" onclick="insertLineBreak()" data-tip="מעבר שורה">↵</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">טורים ומעברים</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-header-footer')" data-tip="כותרת עליונה ותחתונה">כותרות</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-page-num')" data-tip="מספרי עמוד">מספרי עמוד</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="toggleLineNumbers()" data-tip="מספרי שורה">מספרי שורה</button>
+            <button class="rb-btn-sm" onclick="toggleRuler()" data-tip="סרגל">סרגל</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">עמוד מלא</div>
+      </div>
+    </div>
+
+    <!-- ADVANCED EDIT PANEL -->
+    <div id="panel-advanced" style="display:none;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <button class="rb-btn" onclick="applyDropCap('first-para')" data-tip="אות ראשונה מוגדלת בכל פסקה">
+            <span class="rb-icon" style="font-size:24px;font-family:serif;">א</span>
+            <span>אות ראשונה</span>
+          </button>
+        </div>
+        <div class="ribbon-section-label">אות מוגדלת</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <button class="rb-btn" onclick="applyFirstWordBig()" data-tip="מילה ראשונה מוגדלת בכל פסקה">
+            <span class="rb-icon" style="font-size:16px;font-family:serif;">בְּרֵאשִׁית</span>
+            <span>מילה ראשונה</span>
+          </button>
+        </div>
+        <div class="ribbon-section-label">מילה מוגדלת</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <button class="rb-btn" onclick="applySefarimStyle()" data-tip="סגנון ספרי קודש — מילה ראשונה מוגדלת עם גירעון">
+            <span class="rb-icon">📖</span>
+            <span>סגנון ספרי קודש</span>
+          </button>
+          <div style="font-size:10px;color:var(--text-light);text-align:center;max-width:90px;">מילה ראשונה + גירעון</div>
+        </div>
+        <div class="ribbon-section-label">ספרי קודש</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-find')" data-tip="חיפוש">🔍 חיפוש</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-replace')" data-tip="החלפה">🔄 החלפה</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-toc')" data-tip="תוכן עניינים">📑 תוכן עניינים</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-index')" data-tip="מפתח עניינים">📇 מפתח</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">כלים מתקדמים</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-nikud')" data-tip="הוספת ניקוד">◌ּ ניקוד</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-teamim')" data-tip="הוספת טעמים">◌֔ טעמים</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertSpecialChar('׳')" data-tip="גרש">׳</button>
+            <button class="rb-btn-sm" onclick="insertSpecialChar('״')" data-tip="גרשיים">״</button>
+            <button class="rb-btn-sm" onclick="insertSpecialChar('–')" data-tip="מקף אמצע">–</button>
+            <button class="rb-btn-sm" onclick="insertSpecialChar('—')" data-tip="מקף גדול">—</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">עברית מיוחדת</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="toggleSpellCheck()" data-tip="בדיקת איות">📖 איות</button>
+            <button class="rb-btn-sm" onclick="countWords()" data-tip="ספירת מילים">🔢 מילים</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-comment')" data-tip="הוסף הערת עורך">💬 הערת עורך</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">עריכה</div>
+      </div>
+    </div>
+
+    <!-- DESIGN PANEL -->
+    <div id="panel-design" style="display:none;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertShape('rect')" data-tip="הוסף מלבן">□</button>
+            <button class="rb-btn-sm" onclick="insertShape('circle')" data-tip="הוסף עיגול">○</button>
+            <button class="rb-btn-sm" onclick="insertShape('line')" data-tip="הוסף קו">─</button>
+            <button class="rb-btn-sm" onclick="insertShape('triangle')" data-tip="הוסף משולש">△</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertShape('star')" data-tip="הוסף כוכב">★</button>
+            <button class="rb-btn-sm" onclick="insertShape('diamond')" data-tip="הוסף יהלום">◆</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-shapes')" data-tip="עוד צורות">⋯ עוד</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">צורות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <button class="rb-btn" onclick="document.getElementById('img-input').click()" data-tip="הוספת תמונה">
+            <span class="rb-icon">🖼️</span>הוסף תמונה
+          </button>
+          <input type="file" id="img-input" accept="image/*" style="display:none" onchange="insertImage(this)">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-img-props')" data-tip="מאפייני תמונה">⚙ מאפיינים</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-img-effects')" data-tip="אפקטים">✨ אפקטים</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">תמונות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-textbox')" data-tip="תיבת טקסט">T תיבת טקסט</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-table')" data-tip="הוסף טבלה">⊞ טבלה</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="insertDivider('simple')" data-tip="קו מפריד">— קו פשוט</button>
+            <button class="rb-btn-sm" onclick="insertDivider('ornament')" data-tip="קישוט מפריד">❧ קישוט</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">אלמנטים</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">גבול עמוד:</span>
+            <button class="rb-btn-sm" onclick="addPageBorder('simple')" data-tip="גבול פשוט">רגיל</button>
+            <button class="rb-btn-sm" onclick="addPageBorder('double')" data-tip="גבול כפול">כפול</button>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="addPageBorder('ornate')" data-tip="גבול מעוטר">מעוטר</button>
+            <button class="rb-btn-sm" onclick="removePageBorder()" data-tip="הסר גבול">הסר</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">גבולות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <select class="rb-select" id="shape-fill" onchange="setShapeFill(this.value)" style="width:100px;">
+              <option value="">צבע מילוי…</option>
+              <option value="#ffffff">לבן</option>
+              <option value="#1a2540">כחול כהה</option>
+              <option value="#c9a84c">זהב</option>
+              <option value="transparent">שקוף</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <select class="rb-select" id="shape-border" onchange="setShapeBorder(this.value)" style="width:100px;">
+              <option value="">צבע קו…</option>
+              <option value="#000000">שחור</option>
+              <option value="#1a2540">כחול כהה</option>
+              <option value="#c9a84c">זהב</option>
+            </select>
+          </div>
+        </div>
+        <div class="ribbon-section-label">צורה נבחרת</div>
+      </div>
+    </div>
+
+    <!-- FOOTNOTES PANEL -->
+    <div id="panel-footnotes" style="display:none;gap:4px;align-items:stretch;width:100%;">
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <button class="rb-btn gold" onclick="insertFootnote()" data-tip="הוסף הערת שוליים">
+            <span class="rb-icon">📎</span>הוסף הערה
+          </button>
+          <button class="rb-btn" onclick="openModal('modal-fn-settings')" data-tip="הגדרות הערות">
+            <span class="rb-icon">⚙️</span>הגדרות
+          </button>
+        </div>
+        <div class="ribbon-section-label">הערה</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">מיקום:</span>
+            <select class="rb-select" id="fn-position" style="width:110px;">
+              <option value="bottom">תחתית עמוד</option>
+              <option value="side">שוליים צדדיים</option>
+              <option value="end">סוף פרק</option>
+              <option value="endofdoc">סוף מסמך</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">מספור:</span>
+            <select class="rb-select" id="fn-numbering" style="width:110px;">
+              <option value="1">1, 2, 3...</option>
+              <option value="alef">א, ב, ג...</option>
+              <option value="stars">*, **, ***</option>
+              <option value="roman">i, ii, iii...</option>
+              <option value="letters">a, b, c...</option>
+            </select>
+          </div>
+        </div>
+        <div class="ribbon-section-label">מיקום ומספור</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">גופן הערה:</span>
+            <select class="rb-select" id="fn-font" style="width:100px;">
+              <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+              <option value="Heebo">Heebo</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">גודל:</span>
+            <input class="rb-input" type="number" value="10" min="6" max="18" id="fn-size" style="width:50px;">
+            <span style="font-size:11px;color:var(--text-light);">טורים:</span>
+            <input class="rb-input" type="number" value="1" min="1" max="3" id="fn-cols" style="width:40px;">
+          </div>
+        </div>
+        <div class="ribbon-section-label">עיצוב הערות</div>
+      </div>
+      <div class="ribbon-section">
+        <div class="ribbon-controls rb-col">
+          <div class="rb-row">
+            <span style="font-size:11px;color:var(--text-light);">קו חוצץ:</span>
+            <select class="rb-select" style="width:100px;">
+              <option value="solid">קו מלא</option>
+              <option value="dashed">מקווקו</option>
+              <option value="double">כפול</option>
+              <option value="none">ללא קו</option>
+              <option value="ornament">מעוטר</option>
+            </select>
+          </div>
+          <div class="rb-row">
+            <button class="rb-btn-sm" onclick="openModal('modal-fn-link')" data-tip="שרשור הערות">🔗 שרשור</button>
+            <button class="rb-btn-sm" onclick="openModal('modal-fn-restart')" data-tip="אפס מספור">🔄 אפס</button>
+          </div>
+        </div>
+        <div class="ribbon-section-label">קו ושרשור</div>
+      </div>
+    </div>
+
+  </div><!-- end ribbon-panels -->
+</div><!-- end ribbon -->
+
+<!-- ===== MAIN AREA ===== -->
+<div id="main-area">
+
+  <!-- TOOLS SIDEBAR -->
+  <div id="sidebar-tools">
+    <button class="tool-btn active" onclick="setTool('text')" data-tip="כלי טקסט">
+      T
+      <span class="tool-btn-tip">כלי טקסט</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('select')" data-tip="בחירה">
+      ⬚
+      <span class="tool-btn-tip">בחירה</span>
+    </button>
+    <div class="tool-separator"></div>
+    <button class="tool-btn" onclick="setTool('shape')" data-tip="צורות">
+      □
+      <span class="tool-btn-tip">צורות</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('image')" data-tip="תמונה">
+      🖼
+      <span class="tool-btn-tip">תמונה</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('table')" data-tip="טבלה">
+      ⊞
+      <span class="tool-btn-tip">טבלה</span>
+    </button>
+    <div class="tool-separator"></div>
+    <button class="tool-btn" onclick="setTool('footnote')" data-tip="הוסף הערה">
+      📎
+      <span class="tool-btn-tip">הערה</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('comment')" data-tip="הערת עורך">
+      💬
+      <span class="tool-btn-tip">הערת עורך</span>
+    </button>
+    <div class="tool-separator"></div>
+    <button class="tool-btn" onclick="setTool('zoom')" data-tip="זום">
+      🔍
+      <span class="tool-btn-tip">זום</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('measure')" data-tip="מדידה">
+      📏
+      <span class="tool-btn-tip">מדידה</span>
+    </button>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-area">
+    <div class="page-wrapper">
+      <div class="page-shadow">
+        <div class="editor-page" id="editor" contenteditable="true" spellcheck="true"
+          onkeyup="updateStatus()" onmouseup="updateStatus()" oninput="markDirty()">
+          <p style="text-align:center;font-family:'Frank Ruhl Libre',serif;font-size:22pt;font-weight:700;margin-bottom:6px;">כותרת הספר</p>
+          <p style="text-align:center;font-size:12pt;color:#666;margin-bottom:40px;">שם המחבר</p>
+          <p>לפניך תוכנת <strong>מחבר</strong> — עורך ספרים מקצועי בעברית. ניתן להתחיל לכתוב כאן את תוכן הספר.</p>
+          <p>ניתן לבחור טקסט ולהשתמש בסרגל הכלים שלמעלה לעיצוב, שינוי גופן, יישור, הוספת הערות שוליים ועוד.</p>
+          <p>הוסף פסקאות חדשות, שנה את הגופן, הגדל את הכותרות, הכנס צורות ותמונות — הכל בסגנון מקצועי ואלגנטי המיועד לדוברי עברית ולכותבי ספרי קודש.</p>
+        </div>
+      </div>
+      <div class="page-number-badge" id="page-num-badge">עמוד 1</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="panel-right">
+    <div class="panel-section">
+      <div class="panel-section-title">📐 מאפייני עמוד</div>
+      <div class="panel-row">
+        <span class="panel-label">גובה (מ"מ)</span>
+        <input class="panel-input" type="number" value="297" id="prop-height" onchange="updatePageHeight(this.value)">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">רוחב (מ"מ)</span>
+        <input class="panel-input" type="number" value="210" id="prop-width" onchange="updatePageWidth(this.value)">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">שוליים ימין</span>
+        <input class="panel-input" type="number" value="90" id="prop-margin-right">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">שוליים שמאל</span>
+        <input class="panel-input" type="number" value="90" id="prop-margin-left">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">שוליים עליון</span>
+        <input class="panel-input" type="number" value="80" id="prop-margin-top">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">שוליים תחתון</span>
+        <input class="panel-input" type="number" value="80" id="prop-margin-bottom">
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">✏️ גופן נוכחי</div>
+      <div class="panel-row">
+        <span class="panel-label">גופן</span>
+        <select class="panel-select" onchange="applyFormat('fontName',this.value)">
+          <option>Frank Ruhl Libre</option>
+          <option>Heebo</option>
+          <option>David</option>
+          <option>Arial</option>
+        </select>
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">גודל (pt)</span>
+        <input class="panel-input" type="number" value="14" min="6" max="144" onchange="applyFormat('fontSize',this.value)">
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">גובה שורה</span>
+        <input class="panel-input" type="number" value="1.8" step="0.1" min="1" max="4" onchange="setLineHeight(this.value)">
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">📊 סטטיסטיקה</div>
+      <div class="panel-row"><span class="panel-label">מילים</span><strong id="stat-words">0</strong></div>
+      <div class="panel-row"><span class="panel-label">תווים</span><strong id="stat-chars">0</strong></div>
+      <div class="panel-row"><span class="panel-label">פסקאות</span><strong id="stat-paras">0</strong></div>
+      <div class="panel-row"><span class="panel-label">עמודים</span><strong id="stat-pages">1</strong></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">🎨 תבניות מהירות</div>
+      <button class="rb-btn-sm" onclick="applyPreset('chapter')" style="width:100%;margin-bottom:4px;">כותרת פרק</button>
+      <button class="rb-btn-sm" onclick="applyPreset('verse')" style="width:100%;margin-bottom:4px;">פסוק / ציטוט</button>
+      <button class="rb-btn-sm" onclick="applyPreset('footnote-text')" style="width:100%;margin-bottom:4px;">טקסט הערה</button>
+      <button class="rb-btn-sm" onclick="applyPreset('normal')" style="width:100%;">רגיל</button>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">📖 הערות שוליים</div>
+      <div style="font-size:11px;color:var(--text-light);margin-bottom:6px;">לחץ על ⁽¹⁾ בטקסט לעריכת ההערה</div>
+      <button class="rb-btn-sm" onclick="insertFootnote()" style="width:100%;margin-bottom:4px;">+ הוסף הערה</button>
+      <div id="fn-list" style="font-size:11px;color:var(--text-mid);max-height:120px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+</div><!-- end main-area -->
+
+<!-- ===== STATUS BAR ===== -->
+<div id="status-bar">
+  <div class="status-item">📄 <strong id="sb-file">מסמך חדש</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">מילים: <strong id="sb-words">0</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">תווים: <strong id="sb-chars">0</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">עמוד <strong id="sb-page">1</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item" id="sb-saved" style="color:rgba(255,255,255,0.4);">✓ שמור</div>
+  <div id="zoom-control" style="display:flex;align-items:center;gap:8px;margin-right:auto;">
+    <span style="font-size:11px;color:rgba(255,255,255,0.5);">זום:</span>
+    <input type="range" id="zoom-slider" min="50" max="200" value="100" oninput="setZoom(this.value)">
+    <span style="font-size:11px;color:var(--gold-light);" id="zoom-label">100%</span>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- PRINT MODAL -->
+<div class="modal-overlay" id="modal-print">
+  <div class="modal" style="min-width:500px;">
+    <div class="modal-header">
+      🖨️ הדפסה
+      <button class="modal-close" onclick="closeModal('modal-print')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-row">
+        <div class="modal-form-label">מדפסת:</div>
+        <select class="modal-form-select"><option>מדפסת ברירת מחדל</option><option>PDF</option><option>XPS</option></select>
+      </div>
+      <div class="modal-form-row">
+        <div class="modal-form-label">עמודים:</div>
+        <select class="modal-form-select"><option>כל העמודים</option><option>עמוד נוכחי</option><option>טווח מותאם</option></select>
+      </div>
+      <div class="modal-form-row">
+        <div class="modal-form-label">עותקים:</div>
+        <input class="modal-form-input" type="number" value="1" min="1">
+      </div>
+      <div class="modal-form-row">
+        <div class="modal-form-label">כיוון הדפסה:</div>
+        <select class="modal-form-select"><option>לאורך</option><option>לרוחב</option></select>
+      </div>
+      <div class="modal-form-row">
+        <div class="modal-form-label">גודל דף:</div>
+        <select class="modal-form-select"><option>A4</option><option>A5</option><option>B5</option><option>Letter</option></select>
+      </div>
+      <div class="modal-form-row">
+        <div class="modal-form-label">אחד משני צדדים:</div>
+        <select class="modal-form-select"><option>הדפסה חד-צדדית</option><option>הדפסה דו-צדדית (עמוד ארוך)</option><option>הדפסה דו-צדדית (עמוד קצר)</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gold" onclick="window.print();closeModal('modal-print')">הדפס</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-print')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECENT FILES MODAL -->
+<div class="modal-overlay" id="modal-recent">
+  <div class="modal" style="min-width:460px;">
+    <div class="modal-header">
+      🕐 קבצים אחרונים
+      <button class="modal-close" onclick="closeModal('modal-recent')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="recent-files-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-recent')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- MARGINS MODAL -->
+<div class="modal-overlay" id="modal-margins">
+  <div class="modal">
+    <div class="modal-header">📐 שוליים מותאמים אישית<button class="modal-close" onclick="closeModal('modal-margins')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-form-row"><div class="modal-form-label">שוליים עליון (מ"מ):</div><input class="modal-form-input" type="number" value="25" id="m-top"></div>
+      <div class="modal-form-row"><div class="modal-form-label">שוליים תחתון (מ"מ):</div><input class="modal-form-input" type="number" value="25" id="m-bottom"></div>
+      <div class="modal-form-row"><div class="modal-form-label">שוליים ימין (מ"מ):</div><input class="modal-form-input" type="number" value="25" id="m-right"></div>
+      <div class="modal-form-row"><div class="modal-form-label">שוליים שמאל (מ"מ):</div><input class="modal-form-input" type="number" value="25" id="m-left"></div>
+      <div class="modal-form-row"><div class="modal-form-label">כריכה (מ"מ):</div><input class="modal-form-input" type="number" value="0" id="m-gutter"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="applyCustomMargins();closeModal('modal-margins')">אישור</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-margins')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIND/REPLACE MODAL -->
+<div class="modal-overlay" id="modal-find">
+  <div class="modal">
+    <div class="modal-header">🔍 חיפוש והחלפה<button class="modal-close" onclick="closeModal('modal-find')">✕</button></div>
+    <div class="modal-body">
+      <div class="mini-tabs">
+        <div class="mini-tab active">חיפוש</div>
+        <div class="mini-tab" onclick="switchFindTab(this,'replace')">החלפה</div>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">חפש:</div><input class="modal-form-input" id="find-text" placeholder="הכנס טקסט לחיפוש…"></div>
+      <div id="replace-row" class="modal-form-row" style="display:none;"><div class="modal-form-label">החלף ב:</div><input class="modal-form-input" id="replace-text" placeholder="טקסט חלופי…"></div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px;margin-top:8px;">
+        <label><input type="checkbox"> תאם רישיות</label>
+        <label><input type="checkbox"> מילה שלמה</label>
+        <label><input type="checkbox"> ביטויים רגולריים</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="doFind()">חפש</button>
+      <button class="btn btn-gold" id="replace-btn" style="display:none;" onclick="doReplace()">החלף</button>
+      <button class="btn btn-outline" id="replace-all-btn" style="display:none;" onclick="doReplaceAll()">החלף הכל</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-find')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTNOTE SETTINGS MODAL -->
+<div class="modal-overlay" id="modal-fn-settings">
+  <div class="modal" style="min-width:480px;">
+    <div class="modal-header">⚙️ הגדרות הערות שוליים<button class="modal-close" onclick="closeModal('modal-fn-settings')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-form-row"><div class="modal-form-label">מיקום ההערות:</div>
+        <select class="modal-form-select">
+          <option>תחתית העמוד</option><option>שוליים צדדיים</option><option>סוף פרק</option><option>סוף המסמך</option>
+        </select>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">פורמט מספור:</div>
+        <select class="modal-form-select">
+          <option>1, 2, 3...</option><option>א, ב, ג...</option><option>*, **, ***</option><option>i, ii, iii...</option><option>a, b, c...</option>
+        </select>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">מספור מחדש:</div>
+        <select class="modal-form-select"><option>רצוף בכל המסמך</option><option>מחדש בכל פרק</option><option>מחדש בכל עמוד</option></select>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">מספר טורי הערות:</div>
+        <input class="modal-form-input" type="number" value="1" min="1" max="3">
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">גופן הערה:</div>
+        <select class="modal-form-select"><option>Frank Ruhl Libre</option><option>Heebo</option><option>Arial</option></select>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">גודל גופן הערה:</div>
+        <input class="modal-form-input" type="number" value="10">
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">עיצוב מספר ההערה:</div>
+        <select class="modal-form-select"><option>רגיל</option><option>מודגש</option><option>נטוי</option><option>מוגדל</option></select>
+      </div>
+      <div class="modal-form-row"><div class="modal-form-label">קו חוצץ:</div>
+        <select class="modal-form-select"><option>קו מלא קצר</option><option>קו מלא מלא</option><option>מקווקו</option><option>כפול</option><option>ללא</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="applyFnSettings();closeModal('modal-fn-settings')">החל</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-fn-settings')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- STYLES MODAL -->
+<div class="modal-overlay" id="modal-styles">
+  <div class="modal" style="min-width:400px;">
+    <div class="modal-header">🅰 סגנונות טקסט<button class="modal-close" onclick="closeModal('modal-styles')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="recent-file-item" onclick="applyStyle('title');closeModal('modal-styles')">
+          <div style="font-size:18px;font-weight:700;font-family:serif;">כותרת ראשית</div>
+        </div>
+        <div class="recent-file-item" onclick="applyStyle('h2');closeModal('modal-styles')">
+          <div style="font-size:15px;font-weight:700;">כותרת משנית</div>
+        </div>
+        <div class="recent-file-item" onclick="applyStyle('h3');closeModal('modal-styles')">
+          <div style="font-size:13px;font-weight:700;">כותרת קטנה</div>
+        </div>
+        <div class="recent-file-item" onclick="applyStyle('normal');closeModal('modal-styles')">
+          <div style="font-size:13px;">טקסט רגיל</div>
+        </div>
+        <div class="recent-file-item" onclick="applyStyle('quote');closeModal('modal-styles')">
+          <div style="font-size:13px;font-style:italic;border-right:3px solid var(--gold);padding-right:8px;">ציטוט</div>
+        </div>
+        <div class="recent-file-item" onclick="applyStyle('caption');closeModal('modal-styles')">
+          <div style="font-size:11px;color:#888;">כיתוב</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-styles')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE MODAL -->
+<div class="modal-overlay" id="modal-table">
+  <div class="modal">
+    <div class="modal-header">⊞ הוסף טבלה<button class="modal-close" onclick="closeModal('modal-table')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-form-row"><div class="modal-form-label">מספר שורות:</div><input class="modal-form-input" type="number" value="3" min="1" id="tbl-rows"></div>
+      <div class="modal-form-row"><div class="modal-form-label">מספר עמודות:</div><input class="modal-form-input" type="number" value="3" min="1" id="tbl-cols"></div>
+      <div class="modal-form-row"><div class="modal-form-label">כיוון טבלה:</div>
+        <select class="modal-form-select"><option>ימין לשמאל</option><option>שמאל לימין</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="insertTable();closeModal('modal-table')">הוסף</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-table')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOC PROPS MODAL -->
+<div class="modal-overlay" id="modal-props">
+  <div class="modal">
+    <div class="modal-header">ℹ️ מאפייני מסמך<button class="modal-close" onclick="closeModal('modal-props')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-form-row"><div class="modal-form-label">כותרת:</div><input class="modal-form-input" value="מסמך חדש"></div>
+      <div class="modal-form-row"><div class="modal-form-label">מחבר:</div><input class="modal-form-input" placeholder="שם המחבר"></div>
+      <div class="modal-form-row"><div class="modal-form-label">נושא:</div><input class="modal-form-input" placeholder="נושא הספר"></div>
+      <div class="modal-form-row"><div class="modal-form-label">מילות מפתח:</div><input class="modal-form-input" placeholder="מילות מפתח…"></div>
+      <div class="modal-form-row"><div class="modal-form-label">הוצאה לאור:</div><input class="modal-form-input" placeholder="שם המו״ל"></div>
+      <div class="modal-form-row"><div class="modal-form-label">שנת הוצאה:</div><input class="modal-form-input" type="number" placeholder="תשפ״ה"></div>
+      <div class="modal-form-row"><div class="modal-form-label">ISBN:</div><input class="modal-form-input" placeholder="978-..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('modal-props')">שמור</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-props')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let isDirty = false;
+let footnoteCounter = 0;
+let recentFiles = [
+  { name: 'ספר הלכות.מחבר', date: 'לפני שעה', icon: '📄' },
+  { name: 'פירוש על הגדה.מחבר', date: 'אתמול', icon: '📄' },
+  { name: 'דרשות לשבת.מחבר', date: 'לפני שבוע', icon: '📄' },
+];
+
+// ===== WELCOME SCREEN =====
+function startNew() {
+  document.getElementById('welcome-overlay').style.display = 'none';
+  updateStatus();
+}
+function openFile() {
+  startNew();
+  // Simulate file open
+}
+function openRecent() {
+  startNew();
+  setTimeout(() => openModal('modal-recent'), 200);
+}
+function openTemplate() {
+  startNew();
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab, el) {
+  document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#ribbon-panels > div').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById('panel-' + tab);
+  if (panel) panel.style.display = 'flex';
+}
+
+// ===== MODALS =====
+function openModal(id) {
+  if (id === 'modal-recent') populateRecent();
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+function populateRecent() {
+  const list = document.getElementById('recent-files-list');
+  list.innerHTML = recentFiles.map(f => `
+    <div class="recent-file-item" onclick="loadRecent('${f.name}')">
+      <div class="rfi-icon">${f.icon}</div>
+      <div>
+        <div class="rfi-name">${f.name}</div>
+        <div class="rfi-date">${f.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadRecent(name) {
+  document.getElementById('doc-title').value = name;
+  document.getElementById('sb-file').textContent = name;
+  closeModal('modal-recent');
+}
+
+// ===== FORMAT COMMANDS =====
+function applyFormat(cmd, value) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  if (cmd === 'fontSize') {
+    document.execCommand('fontSize', false, '7');
+    const els = editor.querySelectorAll('font[size="7"]');
+    els.forEach(el => {
+      el.removeAttribute('size');
+      el.style.fontSize = value + 'pt';
+    });
+  } else {
+    document.execCommand(cmd, false, value);
+  }
+  updateStatus();
+}
+
+function toggleFormat(cmd) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, null);
+  updateFormatButtons();
+}
+
+function updateFormatButtons() {
+  ['bold','italic','underline'].forEach(cmd => {
+    const btn = document.getElementById('btn-' + cmd);
+    if (btn) {
+      btn.classList.toggle('active', document.queryCommandState(cmd));
+    }
+  });
+}
+
+function setAlign(dir) {
+  document.getElementById('editor').focus();
+  const cmds = {
+    'right': 'justifyRight',
+    'left': 'justifyLeft',
+    'center': 'justifyCenter',
+    'justify': 'justifyFull'
+  };
+  document.execCommand(cmds[dir], false, null);
+}
+
+function setDir(dir) {
+  const sel = window.getSelection();
+  if (sel.rangeCount) {
+    let el = sel.getRangeAt(0).startContainer;
+    if (el.nodeType === 3) el = el.parentElement;
+    const block = el.closest('p,div,h1,h2,h3,blockquote') || el;
+    block.style.direction = dir;
+    block.style.textAlign = dir === 'rtl' ? 'right' : 'left';
+  }
+}
+
+function setLineHeight(val) {
+  const sel = window.getSelection();
+  if (sel.rangeCount) {
+    let el = sel.getRangeAt(0).startContainer;
+    if (el.nodeType === 3) el = el.parentElement;
+    const block = el.closest('p,div') || el;
+    block.style.lineHeight = val;
+  }
+}
+
+function setParaSpace(val) {
+  const sel = window.getSelection();
+  if (sel.rangeCount) {
+    let el = sel.getRangeAt(0).startContainer;
+    if (el.nodeType === 3) el = el.parentElement;
+    const block = el.closest('p,div') || el;
+    block.style.marginBottom = val + 'px';
+  }
+}
+
+function setLetterSpacing(val) {
+  const sel = window.getSelection();
+  if (sel.rangeCount) {
+    let el = sel.getRangeAt(0).startContainer;
+    if (el.nodeType === 3) el = el.parentElement;
+    el.style.letterSpacing = val + 'px';
+  }
+}
+
+function applyTextColor(color) {
+  document.getElementById('editor').focus();
+  document.execCommand('foreColor', false, color);
+  document.getElementById('text-color-swatch').style.background = color;
+}
+
+function applyBgColor(color) {
+  document.getElementById('editor').focus();
+  document.execCommand('hiliteColor', false, color);
+  document.getElementById('bg-color-swatch').style.background = color;
+}
+
+function clearFormat() {
+  document.getElementById('editor').focus();
+  document.execCommand('removeFormat', false, null);
+}
+
+// ===== LISTS =====
+function insertList(type) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  if (type === 'ordered') document.execCommand('insertOrderedList');
+  else if (type === 'unordered') document.execCommand('insertUnorderedList');
+  else if (type === 'alpha') {
+    document.execCommand('insertOrderedList');
+    const lists = editor.querySelectorAll('ol');
+    if (lists.length) lists[lists.length-1].style.listStyleType = 'hebrew';
+  } else if (type === 'roman') {
+    document.execCommand('insertOrderedList');
+    const lists = editor.querySelectorAll('ol');
+    if (lists.length) lists[lists.length-1].style.listStyleType = 'lower-roman';
+  }
+}
+
+function changeIndent(dir) {
+  document.getElementById('editor').focus();
+  document.execCommand(dir === 'in' ? 'indent' : 'outdent');
+}
+
+// ===== ADVANCED EDIT =====
+function applyDropCap(mode) {
+  const editor = document.getElementById('editor');
+  const paras = editor.querySelectorAll('p');
+  paras.forEach(p => {
+    const text = p.textContent.trim();
+    if (!text) return;
+    const firstChar = text[0];
+    const rest = p.innerHTML.slice(p.innerHTML.indexOf(firstChar) + 1);
+    p.innerHTML = `<span style="float:right;font-size:3em;line-height:0.8;font-weight:900;font-family:'Frank Ruhl Libre',serif;margin-left:6px;color:var(--navy);">${firstChar}</span>${rest}`;
+  });
+}
+
+function applyFirstWordBig() {
+  const editor = document.getElementById('editor');
+  const paras = editor.querySelectorAll('p');
+  paras.forEach(p => {
+    const words = p.textContent.trim().split(' ');
+    if (!words.length) return;
+    const first = words[0];
+    const rest = words.slice(1).join(' ');
+    p.innerHTML = `<strong style="font-size:1.4em;font-family:'Frank Ruhl Libre',serif;">${first}</strong> ${rest}`;
+  });
+}
+
+function applySefarimStyle() {
+  const editor = document.getElementById('editor');
+  const paras = editor.querySelectorAll('p');
+  paras.forEach(p => {
+    const words = p.textContent.trim().split(/\s+/);
+    if (!words.length) return;
+    const first = words[0];
+    const rest = words.slice(1).join(' ');
+    const firstLen = first.length;
+    p.innerHTML = `<span style="display:inline-block;font-size:1.5em;font-weight:900;font-family:'Frank Ruhl Libre',serif;vertical-align:baseline;">${first}</span><span style="display:block;border-bottom:2px solid #333;width:${firstLen*1.1}em;margin-bottom:2px;"></span>${rest}`;
+  });
+}
+
+// ===== PAGE LAYOUT =====
+function setPageSize(size) {
+  const editor = document.getElementById('editor');
+  const sizes = {
+    a4: { w: 794, h: 1123 },
+    a5: { w: 559, h: 794 },
+    b5: { w: 669, h: 945 },
+    letter: { w: 816, h: 1056 },
+  };
+  if (sizes[size]) {
+    editor.style.width = sizes[size].w + 'px';
+    editor.style.minHeight = sizes[size].h + 'px';
+  }
+}
+
+function setOrientation(orient) {
+  const editor = document.getElementById('editor');
+  const w = parseInt(editor.style.width) || 794;
+  const h = parseInt(editor.style.minHeight) || 1123;
+  if (orient === 'landscape') {
+    editor.style.width = Math.max(w,h) + 'px';
+    editor.style.minHeight = Math.min(w,h) + 'px';
+  } else {
+    editor.style.width = Math.min(w,h) + 'px';
+    editor.style.minHeight = Math.max(w,h) + 'px';
+  }
+}
+
+function setMargins(type) {
+  const editor = document.getElementById('editor');
+  const margins = {
+    normal: '80px 90px',
+    narrow: '45px 48px',
+    wide: '100px 140px',
+  };
+  if (margins[type]) editor.style.padding = margins[type];
+}
+
+function applyCustomMargins() {
+  const editor = document.getElementById('editor');
+  const t = document.getElementById('m-top').value;
+  const b = document.getElementById('m-bottom').value;
+  const r = document.getElementById('m-right').value;
+  const l = document.getElementById('m-left').value;
+  // Convert mm to px (1mm ≈ 3.78px)
+  const toP = v => Math.round(v * 3.78);
+  editor.style.padding = `${toP(t)}px ${toP(r)}px ${toP(b)}px ${toP(l)}px`;
+}
+
+function setColumns(n) {
+  const editor = document.getElementById('editor');
+  editor.style.columnCount = n > 1 ? n : '';
+  editor.style.columnGap = n > 1 ? '30px' : '';
+}
+
+function insertPageBreak() {
+  document.getElementById('editor').focus();
+  document.execCommand('insertHTML', false, '<div style="page-break-after:always;border-top:1px dashed #ccc;margin:20px 0;height:1px;"></div>');
+}
+
+function insertLineBreak() {
+  document.getElementById('editor').focus();
+  document.execCommand('insertLineBreak');
+}
+
+function addPageBorder(type) {
+  const editor = document.getElementById('editor');
+  const borders = {
+    simple: '2px solid #1a2540',
+    double: '4px double #1a2540',
+    ornate: '3px solid #c9a84c',
+  };
+  editor.style.border = borders[type] || '';
+  editor.style.outline = 'none';
+}
+
+function removePageBorder() {
+  document.getElementById('editor').style.border = '';
+}
+
+// ===== SHAPES =====
+function insertShape(type) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  const shapes = {
+    rect: `<span class="inserted-shape" contenteditable="false" style="display:inline-block;width:120px;height:80px;background:rgba(26,37,64,0.1);border:2px solid #1a2540;vertical-align:middle;margin:6px;"></span>`,
+    circle: `<span class="inserted-shape" contenteditable="false" style="display:inline-block;width:80px;height:80px;background:rgba(201,168,76,0.15);border:2px solid #c9a84c;border-radius:50%;vertical-align:middle;margin:6px;"></span>`,
+    line: `<hr style="border:2px solid #1a2540;margin:10px 0;">`,
+    triangle: `<span class="inserted-shape" contenteditable="false" style="display:inline-block;width:0;height:0;border-left:40px solid transparent;border-right:40px solid transparent;border-bottom:70px solid #1a2540;vertical-align:middle;margin:6px;"></span>`,
+    star: `<span class="inserted-shape" contenteditable="false" style="display:inline-block;font-size:40px;color:#c9a84c;vertical-align:middle;margin:6px;">★</span>`,
+    diamond: `<span class="inserted-shape" contenteditable="false" style="display:inline-block;width:60px;height:60px;background:#c9a84c;transform:rotate(45deg);vertical-align:middle;margin:16px;"></span>`,
+  };
+  if (shapes[type]) document.execCommand('insertHTML', false, shapes[type]);
+}
+
+function insertDivider(type) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  const dividers = {
+    simple: '<hr style="border:1px solid #1a2540;margin:16px 0;">',
+    ornament: '<div style="text-align:center;font-size:18px;color:#c9a84c;margin:16px 0;letter-spacing:10px;">✦ ✦ ✦</div>',
+  };
+  document.execCommand('insertHTML', false, dividers[type] || dividers.simple);
+}
+
+// ===== IMAGES =====
+function insertImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const editor = document.getElementById('editor');
+    editor.focus();
+    document.execCommand('insertHTML', false,
+      `<img src="${e.target.result}" style="max-width:100%;height:auto;display:block;margin:10px auto;border:1px solid #ddd;" alt="תמונה">`
+    );
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ===== TABLE =====
+function insertTable() {
+  const rows = parseInt(document.getElementById('tbl-rows').value) || 3;
+  const cols = parseInt(document.getElementById('tbl-cols').value) || 3;
+  let html = '<table style="border-collapse:collapse;width:100%;margin:10px 0;direction:rtl;">';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      html += `<td style="border:1px solid #1a2540;padding:8px 12px;min-width:60px;"> </td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table>';
+  document.getElementById('editor').focus();
+  document.execCommand('insertHTML', false, html);
+}
+
+// ===== FOOTNOTES =====
+function insertFootnote() {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  footnoteCounter++;
+  const ref = footnoteCounter;
+  const num = getFootnoteLabel(ref);
+  document.execCommand('insertHTML', false,
+    `<sup class="fn-ref" id="fnref-${ref}" onclick="scrollToFootnote(${ref})">${num}</sup>`
+  );
+  // Add to footnote area
+  let fnArea = editor.querySelector('.footnote-area');
+  if (!fnArea) {
+    fnArea = document.createElement('div');
+    fnArea.className = 'footnote-area';
+    editor.appendChild(fnArea);
+  }
+  const fn = document.createElement('div');
+  fn.className = 'footnote-item';
+  fn.id = 'fn-' + ref;
+  fn.innerHTML = `<strong>${num}</strong> <span contenteditable="true" style="outline:none;">הערה ${ref} — הכנס כאן את תוכן ההערה</span>`;
+  fnArea.appendChild(fn);
+  updateFnList();
+}
+
+function getFootnoteLabel(n) {
+  const style = document.getElementById('fn-numbering')?.value || '1';
+  if (style === 'alef') {
+    const letters = 'אבגדהוזחטיכלמנסעפצקרשת';
+    return letters[(n-1) % letters.length];
+  }
+  if (style === 'stars') return '*'.repeat(n);
+  if (style === 'roman') {
+    const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+    const syms = ['m','cm','d','cd','c','xc','l','xl','x','ix','v','iv','i'];
+    let res = '', num = n;
+    for (let i = 0; i < vals.length; i++) {
+      while (num >= vals[i]) { res += syms[i]; num -= vals[i]; }
+    }
+    return res;
+  }
+  return n;
+}
+
+function scrollToFootnote(n) {
+  const fn = document.getElementById('fn-' + n);
+  if (fn) fn.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateFnList() {
+  const list = document.getElementById('fn-list');
+  const refs = document.querySelectorAll('.fn-ref');
+  list.innerHTML = refs.length
+    ? Array.from(refs).map((r, i) => `<div style="padding:3px 0;cursor:pointer;" onclick="scrollToFootnote(${i+1})">הערה ${i+1}</div>`).join('')
+    : '<span style="color:#aaa;">אין הערות עדיין</span>';
+}
+
+// ===== STYLES PRESETS =====
+function applyStyle(style) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  const styles = {
+    title: { tag: 'h1', css: 'text-align:center;font-size:22pt;font-weight:700;font-family:Frank Ruhl Libre,serif;' },
+    h2: { tag: 'h2', css: 'font-size:16pt;font-weight:700;' },
+    h3: { tag: 'h3', css: 'font-size:13pt;font-weight:700;' },
+    normal: { tag: 'p', css: 'font-size:14pt;font-weight:normal;' },
+    quote: { tag: 'blockquote', css: 'border-right:4px solid #c9a84c;padding-right:16px;font-style:italic;color:#555;' },
+    caption: { tag: 'p', css: 'font-size:10pt;color:#888;text-align:center;' },
+  };
+  if (styles[style]) {
+    document.execCommand('formatBlock', false, styles[style].tag);
+  }
+}
+
+function applyPreset(preset) {
+  const editor = document.getElementById('editor');
+  editor.focus();
+  const presets = {
+    chapter: '<h2 style="font-size:18pt;font-weight:700;text-align:center;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:16px;">פרק חדש</h2>',
+    verse: '<blockquote style="border-right:4px solid #c9a84c;padding:8px 16px;font-style:italic;color:#555;margin:10px 30px;">הכנס כאן ציטוט או פסוק</blockquote>',
+    'footnote-text': '<p style="font-size:10pt;color:#444;">הכנס כאן טקסט הערה</p>',
+    normal: '<p>טקסט רגיל</p>',
+  };
+  if (presets[preset]) document.execCommand('insertHTML', false, presets[preset]);
+}
+
+// ===== SPECIAL CHARS =====
+function insertSpecialChar(char) {
+  document.getElementById('editor').focus();
+  document.execCommand('insertText', false, char);
+}
+
+// ===== FILE OPERATIONS =====
+function saveFile() {
+  isDirty = false;
+  document.getElementById('sb-saved').textContent = '✓ שמור';
+  document.getElementById('sb-saved').style.color = 'rgba(255,255,255,0.4)';
+  const content = document.getElementById('editor').innerHTML;
+  const blob = new Blob([`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>מסמך</title></head><body style="font-family:Frank Ruhl Libre,serif;direction:rtl;">${content}</body></html>`], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (document.getElementById('doc-title').value || 'מסמך') + '.html';
+  a.click();
+}
+
+function newFile() {
+  if (isDirty && !confirm('יש שינויים שלא נשמרו. להמשיך?')) return;
+  document.getElementById('editor').innerHTML = '<p>התחל לכתוב כאן…</p>';
+  footnoteCounter = 0;
+  isDirty = false;
+  updateStatus();
+}
+
+function saveAs(format) {
+  const title = document.getElementById('doc-title').value || 'מסמך';
+  const content = document.getElementById('editor').innerHTML;
+
+  if (format === 'pdf') {
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>${title}</title>
+    <style>body{font-family:'Frank Ruhl Libre',serif;direction:rtl;padding:60px;font-size:14pt;line-height:1.8;}</style></head>
+    <body>${content}<script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
+    w.document.close();
+    return;
+  }
+
+  if (format === 'docx' || format === 'html') {
+    const blob = new Blob([`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>${title}</title></head><body style="font-family:Frank Ruhl Libre,serif;direction:rtl;padding:40px;">${content}</body></html>`], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title + (format === 'docx' ? '-word.html' : '.html');
+    a.click();
+    return;
+  }
+
+  if (format === 'png' || format === 'jpg') {
+    alert(`ייצוא כתמונה ${format.toUpperCase()} דורש ספריה חיצונית. בגרסה המלאה יתמך ייצוא זה.`);
+  }
+}
+
+function openFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.html,.htm,.txt';
+  input.onchange = function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(e.target.result, 'text/html');
+      document.getElementById('editor').innerHTML = doc.body.innerHTML || e.target.result;
+      document.getElementById('doc-title').value = file.name;
+      updateStatus();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ===== STATUS & STATS =====
+function updateStatus() {
+  const editor = document.getElementById('editor');
+  const text = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  const paras = editor.querySelectorAll('p').length;
+
+  document.getElementById('sb-words').textContent = words;
+  document.getElementById('sb-chars').textContent = chars;
+  document.getElementById('stat-words').textContent = words;
+  document.getElementById('stat-chars').textContent = chars;
+  document.getElementById('stat-paras').textContent = paras;
+
+  updateFormatButtons();
+}
+
+function countWords() {
+  const editor = document.getElementById('editor');
+  const text = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  alert(`סה"כ מילים: ${words}\nסה"כ תווים: ${text.length}\nסה"כ פסקאות: ${editor.querySelectorAll('p').length}`);
+}
+
+function markDirty() {
+  if (!isDirty) {
+    isDirty = true;
+    document.getElementById('sb-saved').textContent = '● לא שמור';
+    document.getElementById('sb-saved').style.color = '#ffbd2e';
+  }
+  updateStatus();
+}
+
+// ===== ZOOM =====
+function setZoom(val) {
+  document.getElementById('canvas-area').style.zoom = (val / 100);
+  document.getElementById('zoom-label').textContent = val + '%';
+}
+
+// ===== TOOL SELECT =====
+function setTool(tool) {
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const editor = document.getElementById('editor');
+  editor.contentEditable = tool === 'text' ? 'true' : 'inherit';
+}
+
+// ===== UPDATE PAGE HEIGHT =====
+function updatePageHeight(val) {
+  document.getElementById('editor').style.minHeight = Math.round(val * 3.78) + 'px';
+}
+function updatePageWidth(val) {
+  document.getElementById('editor').style.width = Math.round(val * 3.78) + 'px';
+}
+
+// ===== FIND =====
+function doFind() {
+  const term = document.getElementById('find-text').value;
+  if (!term) return;
+  const editor = document.getElementById('editor');
+  const text = editor.innerHTML;
+  const highlighted = text.replace(new RegExp(term, 'gi'), match =>
+    `<mark style="background:#fff176;">${match}</mark>`
+  );
+  editor.innerHTML = highlighted;
+}
+
+function doReplace() {
+  const find = document.getElementById('find-text').value;
+  const replace = document.getElementById('replace-text').value;
+  if (!find) return;
+  const editor = document.getElementById('editor');
+  editor.innerHTML = editor.innerHTML.replace(new RegExp(find, 'gi'), replace);
+}
+
+function doReplaceAll() { doReplace(); }
+
+function switchFindTab(el, mode) {
+  document.querySelectorAll('.mini-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const isReplace = mode === 'replace';
+  document.getElementById('replace-row').style.display = isReplace ? 'flex' : 'none';
+  document.getElementById('replace-btn').style.display = isReplace ? '' : 'none';
+  document.getElementById('replace-all-btn').style.display = isReplace ? '' : 'none';
+}
+
+// ===== MISC =====
+function toggleSpellCheck() {
+  const editor = document.getElementById('editor');
+  editor.spellcheck = !editor.spellcheck;
+}
+
+function applyFnSettings() {}
+function setShapeFill(v) {}
+function setShapeBorder(v) {}
+function toggleLineNumbers() { alert('מספרי שורה — זמין בגרסה המלאה'); }
+function toggleRuler() { alert('סרגל — זמין בגרסה המלאה'); }
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case 's': e.preventDefault(); saveFile(); break;
+      case 'b': e.preventDefault(); toggleFormat('bold'); break;
+      case 'i': e.preventDefault(); toggleFormat('italic'); break;
+      case 'u': e.preventDefault(); toggleFormat('underline'); break;
+      case 'f': e.preventDefault(); openModal('modal-find'); break;
+      case 'p': e.preventDefault(); openModal('modal-print'); break;
+    }
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ===== INIT =====
+updateStatus();
+</script>
+</body>
+</html>
